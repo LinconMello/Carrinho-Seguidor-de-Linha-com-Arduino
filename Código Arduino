@@ -1,0 +1,123 @@
+#define pinSensorD 7
+#define pinSensorE 6
+#define motorDirFrente 10
+#define motorDirTras 11
+#define motorEsqFrente 8
+#define motorEsqTras 9
+#define velocidadeE 130
+#define velocidadeD 250
+
+char comandoBluetooth = ' ';
+int buzzerPin = 3;
+
+// Protótipo da função para execução de comandos via Bluetooth
+void executarComandoBluetooth();
+
+void setup() {
+  // Configura os pinos dos sensores como entrada
+  pinMode(pinSensorD, INPUT);
+  pinMode(pinSensorE, INPUT);
+
+  // Configura os pinos dos motores como saída
+  pinMode(motorDirFrente, OUTPUT);
+  pinMode(motorDirTras, OUTPUT);
+  pinMode(motorEsqFrente, OUTPUT);
+  pinMode(motorEsqTras, OUTPUT);
+
+  // Inicializa a comunicação serial
+  Serial.begin(9600);
+
+  // Configura o pino do buzzer como saída
+  pinMode(buzzerPin, OUTPUT);
+}
+
+void loop() {
+  // Verifica se há dados disponíveis na comunicação serial (Bluetooth)
+  if (Serial.available() > 0) {
+    comandoBluetooth = Serial.read();
+    // Executa o comando recebido via Bluetooth
+    executarComandoBluetooth();
+  }
+
+  // Lê o estado dos sensores
+  bool estadoD = digitalRead(pinSensorD); // Estado do sensor direito
+  bool estadoE = digitalRead(pinSensorE); // Estado do sensor esquerdo
+
+  // Lógica de controle dos motores com base no estado dos sensores
+  if (estadoD && estadoE) {
+    // Ambos os sensores ativados, move para frente
+    analogWrite(motorDirFrente, velocidadeD);
+    analogWrite(motorDirTras, 0);
+    analogWrite(motorEsqFrente, velocidadeE);
+    analogWrite(motorEsqTras, 0);
+  } else if (!estadoD && estadoE) {
+    // Apenas sensor esquerdo está ativado, move para a direita
+    analogWrite(motorEsqFrente, 0);
+    analogWrite(motorEsqTras, 0);
+    analogWrite(motorDirFrente, velocidadeD); 
+    analogWrite(motorDirTras, 0);
+  } else if (estadoD && !estadoE) {
+    // Apenas sensor direito está ativado, move para a esquerda
+    analogWrite(motorEsqFrente, velocidadeE);
+    analogWrite(motorEsqTras, 0);
+    analogWrite(motorDirFrente, 0); 
+    analogWrite(motorDirTras, 0);
+  } else if (!estadoD && !estadoE) {
+    // Nenhum sensor está ativado, move para trás
+    analogWrite(motorDirFrente, 190);
+    analogWrite(motorDirTras, 0);
+    analogWrite(motorEsqFrente, 0);
+    analogWrite(motorEsqTras, 255);
+  }
+}
+
+void executarComandoBluetooth() {
+  // Executa ações específicas com base no comando recebido via Bluetooth
+  switch (comandoBluetooth) {
+    case 'A':
+      // Emite um som e para o carrinho por 3 segundos
+      tone(buzzerPin, 261, 3000);
+      pararPorTempo(3000);
+      noTone(buzzerPin);
+      break;
+
+    case 'B':
+      // Gira o carrinho 180 graus
+      analogWrite(motorDirFrente, 180);
+      analogWrite(motorDirTras, 0);
+      analogWrite(motorEsqFrente, 0);
+      analogWrite(motorEsqTras, 180);
+      delay(2000);
+      break;
+      
+    case 'D':
+      // Faz uma bifurcação para a direita
+      analogWrite(motorDirFrente, 0);
+      analogWrite(motorDirTras, 0);
+      analogWrite(motorEsqFrente, 190);
+      analogWrite(motorEsqTras, 0);
+      delay(400);
+      break;
+      
+    case 'E':
+      // Faz uma bifurcação para a esquerda
+      analogWrite(motorDirFrente, 190);
+      analogWrite(motorDirTras, 0);
+      analogWrite(motorEsqFrente, 0);
+      analogWrite(motorEsqTras, 0);
+      delay(400);
+      break;
+  }
+
+  // Limpa o comando para evitar repetições
+  comandoBluetooth = ' ';
+}
+
+void pararPorTempo(int tempo) {
+  // Para o carrinho por um tempo determinado
+  analogWrite(motorDirFrente, 0);
+  analogWrite(motorDirTras, 0);
+  analogWrite(motorEsqFrente, 0);
+  analogWrite(motorEsqTras, 0);
+  delay(tempo);
+}
